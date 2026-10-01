@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#090d0d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Talk to Kavi" />
+  <link rel="icon" href="assets/kavi-touch-icon.jpg" />
+  <link rel="apple-touch-icon" href="assets/kavi-touch-icon.jpg" />
+  <title>Talk to Kavi</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #eef0ec;
+      --stage: #101817;
+      --stage-deep: #080c0c;
+      --surface: #ffffff;
+      --surface-soft: #e5e9e5;
+      --text: #111817;
+      --muted: #53615d;
+      --line: #ccd3cf;
+      --ember: #ee6049;
+      --ember-deep: #a82f24;
+      --ember-soft: #f9d8d1;
+      --teal: #08756b;
+      --teal-bright: #4de0c8;
+      --gold: #ffc672;
+      --shadow: 0 18px 50px rgba(8, 16, 14, .14);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #090d0d;
+        --surface: #18201f;
+        --surface-soft: #222c2a;
+        --text: #f3f6f3;
+        --muted: #aebbb7;
+        --line: #34413e;
+        --ember: #ff6c55;
+        --ember-deep: #b93629;
+        --ember-soft: #452824;
+        --teal: #51d5c0;
+        --shadow: 0 20px 54px rgba(0, 0, 0, .32);
+      }
+    }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--bg); }
+    body {
+      min-height: 100%; margin: 0; background: var(--bg); color: var(--text);
+      font-family: ui-rounded, "SF Pro Rounded", "Avenir Next", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+    }
+    button, textarea { font: inherit; }
+    button { touch-action: manipulation; }
+    main { width: 100%; min-height: 100svh; }
+
+    .stage {
+      position: relative; isolation: isolate; display: grid; grid-template-rows: auto minmax(280px, 1fr) auto;
+      min-height: 100svh; overflow: hidden;
+      padding: max(20px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+      color: #f7faf8; background:
+        radial-gradient(circle at 50% 46%, rgba(217, 67, 45, .2), transparent 36%),
+        radial-gradient(circle at 50% 84%, rgba(58, 189, 169, .09), transparent 38%),
+        linear-gradient(155deg, var(--stage), var(--stage-deep));
+    }
+    .stage::before {
+      content: ""; position: absolute; z-index: -1; inset: 0; opacity: .2;
+      background-image: linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px);
+      background-size: 44px 44px; mask-image: radial-gradient(circle at center, black, transparent 78%);
+    }
+    .stage-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: min(100%, 980px); margin: 0 auto; }
+    .presence { display: flex; align-items: center; gap: 9px; min-width: 0; color: #c4d0cc; font-size: .82rem; font-weight: 720; letter-spacing: .06em; text-transform: uppercase; }
+    .presence-dot { width: 9px; height: 9px; flex: 0 0 auto; border-radius: 50%; background: var(--teal-bright); box-shadow: 0 0 0 5px rgba(77,224,200,.1), 0 0 18px rgba(77,224,200,.7); }
+    .state-word { color: #fff; }
+    .stage-help { max-width: 33ch; margin: 0; text-align: right; color: #99aaa5; font-size: .78rem; line-height: 1.35; }
+
+    .avatar-wrap { position: relative; display: grid; place-items: center; align-self: center; min-height: 0; }
+    .aura {
+      position: absolute; width: min(76vw, 520px); aspect-ratio: 1; border: 1px solid rgba(255,133,104,.24); border-radius: 50%;
+      box-shadow: inset 0 0 50px rgba(228,76,52,.07), 0 0 90px rgba(228,76,52,.08);
+      animation: aura-idle 4.5s ease-in-out infinite;
+    }
+    .aura::before, .aura::after { content: ""; position: absolute; border-radius: 50%; inset: 8%; border: 1px dashed rgba(255,198,114,.14); }
+    .aura::after { inset: 22%; border-style: solid; border-color: rgba(77,224,200,.1); }
+    .avatar {
+      position: relative; width: min(78vw, 540px); aspect-ratio: 1; display: grid; place-items: center;
+      filter: drop-shadow(0 20px 24px rgba(0,0,0,.42));
+      animation: avatar-idle 4.5s ease-in-out infinite; transform-origin: 50% 78%;
+    }
+    .avatar svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .dragon-head { transform-origin: 50% 68%; }
+    .lower-jaw { transform-origin: 51% 64%; }
+    .eyelid { transform: scaleY(0); transform-box: fill-box; transform-origin: center; animation: blink 6.5s ease-in-out infinite; }
+    .voice-bars { position: absolute; left: 50%; bottom: 2%; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; gap: 6px; width: 74%; height: 50px; opacity: .54; }
+    .voice-bars i { display: block; width: 5px; height: 8px; border-radius: 5px; background: linear-gradient(to top, var(--ember), var(--gold)); transform-origin: bottom; }
+    .voice-bars i:nth-child(2n) { height: 14px; }
+    .voice-bars i:nth-child(3n) { height: 22px; }
+    .voice-bars i:nth-child(5n) { height: 31px; }
+
+    .stage.speaking .state-word { color: var(--gold); }
+    .stage.speaking .presence-dot { background: var(--gold); box-shadow: 0 0 0 6px rgba(255,198,114,.12), 0 0 22px rgba(255,117,83,.9); }
+    .stage.speaking .aura { animation: aura-speak .85s ease-in-out infinite; border-color: rgba(255,123,87,.62); }
+    .stage.speaking .avatar { animation: none; }
+    .stage.speaking .dragon-head { animation: head-talk 1.05s ease-in-out infinite; }
+    .stage.speaking .lower-jaw { animation: jaw-talk .32s ease-in-out infinite alternate; }
+    .stage.speaking .voice-bars { opacity: 1; }
+    .stage.speaking .voice-bars i { animation: voice .64s ease-in-out infinite alternate; }
+    .stage.speaking .voice-bars i:nth-child(2n) { animation-delay: -.18s; }
+    .stage.speaking .voice-bars i:nth-child(3n) { animation-delay: -.38s; }
+    .stage.speaking .voice-bars i:nth-child(5n) { animation-delay: -.52s; }
+
+    @keyframes avatar-idle { 0%,100% { transform: translateY(3px) rotate(-.45deg) scale(.985); } 50% { transform: translateY(-5px) rotate(.45deg) scale(1); } }
+    @keyframes aura-idle { 0%,100% { transform: scale(.97); opacity: .68; } 50% { transform: scale(1.02); opacity: 1; } }
+    @keyframes aura-speak { 0%,100% { transform: scale(.97); box-shadow: 0 0 54px rgba(238,96,73,.18); } 50% { transform: scale(1.045); box-shadow: 0 0 100px rgba(238,96,73,.38); } }
+    @keyframes blink { 0%,44%,48%,100% { transform: scaleY(0); } 45%,47% { transform: scaleY(1); } }
+    @keyframes head-talk { 0%,100% { transform: translateY(0) rotate(-.35deg); } 50% { transform: translateY(-3px) rotate(.55deg); } }
+    @keyframes jaw-talk { from { transform: rotate(0deg) translateY(0); } to { transform: rotate(4.8deg) translateY(4px); } }
+    @keyframes voice { from { transform: scaleY(.28); opacity: .5; } to { transform: scaleY(1.25); opacity: 1; } }
+
+    .stage-controls { width: min(100%, 760px); margin: 0 auto; text-align: center; }
+    .stage-controls h1 { margin: 0; font-size: clamp(1.55rem, 4vw, 2.3rem); line-height: 1.05; letter-spacing: -.035em; }
+    .stage-controls p { margin: 8px auto 0; max-width: 50ch; color: #aebdb8; font-size: .92rem; line-height: 1.45; }
+    .mic-button {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 58px; margin-top: 16px; padding: 0 24px;
+      border: 1px solid rgba(255,255,255,.12); border-radius: 18px; color: #fff; background: var(--ember);
+      box-shadow: 0 7px 0 #8c271f, 0 18px 34px rgba(238,96,73,.2); cursor: pointer; font-size: 1.02rem; font-weight: 800;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    .mic-button svg { width: 22px; height: 22px; }
+    .mic-button:hover { background: #ff765e; }
+    .mic-button:active { transform: translateY(4px); box-shadow: 0 3px 0 #8c271f, 0 10px 22px rgba(238,96,73,.16); }
+    .mic-button.listening { background: #f4f3ee; color: #111817; box-shadow: 0 7px 0 #a7aaa6, 0 0 0 8px rgba(255,255,255,.08); animation: mic-breathe 1.4s ease-in-out infinite; }
+    @keyframes mic-breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+
+    .workspace { width: min(100%, 1080px); margin: 0 auto; padding: 26px max(16px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+    .work-grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
+    .panel { padding: clamp(18px, 3vw, 26px); border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); }
+    .message-panel { border-radius: 26px 26px 14px 14px; }
+    .reply-panel { border-radius: 14px; }
+    .home-panel { border-radius: 14px 14px 26px 26px; }
+    .section-heading { margin-bottom: 14px; }
+    .section-heading h2 { margin: 0; font-size: 1.2rem; letter-spacing: -.02em; }
+    .section-heading p { margin: 5px 0 0; color: var(--muted); font-size: .9rem; line-height: 1.45; }
+    .field-label { display: flex; justify-content: space-between; gap: 10px; margin: 0 0 8px; font-size: .9rem; font-weight: 760; }
+    .field-label span { color: var(--muted); font-size: .78rem; font-weight: 560; }
+    textarea { display: block; width: 100%; min-height: 132px; resize: vertical; padding: 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--text); background: var(--surface-soft); font-size: 1rem; line-height: 1.5; }
+    textarea::placeholder { color: var(--muted); opacity: .85; }
+    .actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; margin-top: 10px; }
+    .actions button, .play-button { min-height: 50px; border: 0; border-radius: 12px; padding: 0 18px; cursor: pointer; font-weight: 800; }
+    .copy-button, .play-button { color: #fff; background: var(--teal); }
+    .copy-button.copied { background: #28765f; }
+    .clear-button { color: var(--muted); background: var(--surface-soft); }
+    .play-button { display: flex; width: 100%; align-items: center; justify-content: center; gap: 9px; margin-top: 10px; background: var(--ember); }
+    .play-button svg { width: 20px; height: 20px; }
+    button:disabled { opacity: .47; cursor: not-allowed; }
+    button:focus-visible, textarea:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+    .fallback { display: none; margin: 0 0 12px; padding: 11px 12px; border-radius: 10px; background: var(--ember-soft); color: var(--text); font-size: .87rem; line-height: 1.4; }
+
+    .home-heading { display: grid; grid-template-columns: 58px minmax(0,1fr); gap: 13px; align-items: center; }
+    .home-icon { width: 58px; height: 58px; border-radius: 14px; object-fit: cover; box-shadow: 0 5px 14px rgba(0,0,0,.16); }
+    .steps { display: grid; gap: 10px; margin: 16px 0 0; padding: 0; list-style: none; counter-reset: step; }
+    .steps li { display: grid; grid-template-columns: 28px minmax(0,1fr); gap: 10px; align-items: start; color: var(--muted); font-size: .9rem; line-height: 1.4; counter-increment: step; }
+    .steps li::before { content: counter(step); display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: #fff; background: var(--teal); font-size: .76rem; font-weight: 850; }
+    .steps strong { color: var(--text); }
+    .privacy { margin: 18px 2px 0; color: var(--muted); font-size: .78rem; line-height: 1.45; }
+    .privacy strong { color: var(--text); }
+    .toast { position: fixed; z-index: 20; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translate(-50%, 14px); max-width: calc(100vw - 28px); padding: 11px 16px; border-radius: 999px; color: var(--surface); background: var(--text); box-shadow: var(--shadow); font-weight: 750; opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (min-width: 820px) {
+      .stage { min-height: 100svh; }
+      .avatar { width: min(51vw, 560px); }
+      .aura { width: min(49vw, 525px); }
+      .work-grid { grid-template-columns: minmax(0, 1.08fr) minmax(310px, .92fr); }
+      .message-panel { grid-row: span 2; border-radius: 26px 14px 14px 26px; }
+      .reply-panel { border-radius: 14px 26px 14px 14px; }
+      .home-panel { border-radius: 14px 14px 26px 14px; }
+      .message-panel textarea { min-height: 220px; }
+    }
+    @media (max-height: 680px) and (orientation: landscape) {
+      .stage { min-height: 680px; }
+      .avatar { width: min(47vw, 390px); }
+      .aura { width: min(45vw, 370px); }
+    }
+    @media (max-width: 430px) {
+      .stage { min-height: 100svh; grid-template-rows: auto minmax(240px, 1fr) auto; }
+      .stage-help { display: none; }
+      .avatar { width: min(95vw, 440px); }
+      .aura { width: min(88vw, 410px); }
+      .voice-bars { bottom: 0; }
+      .actions { grid-template-columns: 1fr; }
+      .clear-button { min-height: 44px !important; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+      .stage.speaking .voice-bars i { animation-duration: .55s !important; animation-iteration-count: infinite !important; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="stage" id="stage" aria-labelledby="heroTitle">
+      <div class="stage-top">
+        <div class="presence"><span class="presence-dot" aria-hidden="true"></span><span>Kavi is <span class="state-word" id="avatarState">ready</span></span></div>
+        <p class="stage-help">The dragon moves whenever Kavi’s reply is spoken aloud.</p>
+      </div>
+
+      <div class="avatar-wrap" aria-label="Animated red dragon avatar for Kavi">
+        <div class="aura" aria-hidden="true"></div>
+        <div class="avatar" aria-hidden="true">
+          <svg viewBox="0 0 620 620" role="img">
+            <defs>
+              <radialGradient id="face" cx="42%" cy="34%" r="70%"><stop offset="0" stop-color="#ff8567"/><stop offset=".45" stop-color="#d74432"/><stop offset="1" stop-color="#701b19"/></radialGradient>
+              <linearGradient id="snout" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e95640"/><stop offset="1" stop-color="#81221c"/></linearGradient>
+              <linearGradient id="horn" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#ffd69b"/><stop offset=".5" stop-color="#b97849"/><stop offset="1" stop-color="#573327"/></linearGradient>
+              <linearGradient id="neck" x1=".2" y1="0" x2=".7" y2="1"><stop stop-color="#a82d24"/><stop offset="1" stop-color="#461716"/></linearGradient>
+              <filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            </defs>
+            <g class="dragon-head">
+              <path d="M255 502c-30 30-54 76-59 117h237c-11-61-41-109-79-134z" fill="url(#neck)"/>
+              <path d="M197 235C146 190 130 124 162 61c30 69 68 86 101 94z" fill="#711b1c" stroke="#f16a4c" stroke-width="6"/>
+              <path d="M392 164c39-87 101-112 156-106-40 32-44 82-43 133z" fill="url(#horn)" stroke="#3e2822" stroke-width="7"/>
+              <path d="M339 134c14-86 61-127 113-132-28 42-15 90-5 126z" fill="url(#horn)" stroke="#3e2822" stroke-width="7"/>
+              <path d="M215 169c-1-62 21-104 54-135 5 55 33 80 54 105z" fill="#9b2923" stroke="#f36c50" stroke-width="6"/>
+              <path d="M421 175l72-21-42 57 64 6-66 35z" fill="#9f2c24" stroke="#e65b43" stroke-width="6"/>
+              <path d="M183 285c1-88 51-152 134-165 86-14 163 40 171 125 8 81-44 172-166 197-94 19-153-67-139-157z" fill="url(#face)" stroke="#611916" stroke-width="8"/>
+              <path d="M202 293c-40 18-75 58-90 95 37-17 63-11 83 8z" fill="#a62b24" stroke="#e85a43" stroke-width="6"/>
+              <path d="M433 247c18 11 34 34 41 55-23-12-42-10-56 2z" fill="#ff795c" opacity=".48"/>
+              <path d="M225 255c39-36 88-42 124-10-33-7-69 5-88 30z" fill="#571917"/>
+              <path d="M268 244c27-10 52-2 63 15-20 26-46 29-72 7z" fill="#ffc45f" stroke="#351513" stroke-width="6"/>
+              <ellipse cx="292" cy="257" rx="8" ry="18" fill="#1a0b09"/>
+              <path class="eyelid" d="M255 237c30-18 62-13 80 13-31-9-57-5-80 7z" fill="#9f2b24"/>
+              <path d="M170 343c62-56 168-65 257-24 32 15 34 69 1 94-53 39-180 48-270 3-29-14-18-50 12-73z" fill="url(#snout)" stroke="#641a17" stroke-width="8"/>
+              <ellipse cx="196" cy="363" rx="14" ry="9" fill="#421412" transform="rotate(-19 196 363)"/>
+              <ellipse cx="242" cy="348" rx="12" ry="8" fill="#421412" transform="rotate(-9 242 348)"/>
+              <path d="M152 402c70 22 176 23 284-3-34 47-94 79-172 74-51-3-90-24-112-71z" fill="#2b1111"/>
+              <path d="M180 409l18 36 17-29M232 418l18 42 19-41M371 414l16 34 18-42" fill="#f2d4a3" stroke="#6f4431" stroke-width="4"/>
+              <g class="lower-jaw">
+                <path d="M159 406c72 25 177 25 276-4-22 66-91 108-177 90-49-10-81-41-99-86z" fill="#86251f" stroke="#541714" stroke-width="8"/>
+                <path d="M188 437c58 22 142 19 205-5-28 41-76 58-135 48-28-5-52-20-70-43z" fill="#d65c4c" opacity=".65"/>
+                <path d="M287 437l17 31 17-34M337 429l17 31 16-37" fill="#f2d4a3" stroke="#6f4431" stroke-width="4"/>
+              </g>
+              <path d="M211 302l22-16 18 17-21 15zM366 202l18-19 23 14-17 22zM388 285l20-16 18 21-23 14zM293 180l17-18 21 17-13 22z" fill="#ff9e78" opacity=".58"/>
+              <path d="M234 319c43 13 89 11 131-3" fill="none" stroke="#ff9f7c" stroke-width="6" stroke-linecap="round" opacity=".45"/>
+              <path d="M465 118c-8 47-18 77-40 104M408 62c-11 39-24 65-44 89" fill="none" stroke="#f4c282" stroke-width="5" opacity=".48"/>
+              <circle cx="325" cy="171" r="5" fill="#ffd38c" filter="url(#glow)"/>
+            </g>
+          </svg>
+          <div class="voice-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+      </div>
+
+      <div class="stage-controls">
+        <h1 id="heroTitle">Speak. Kavi listens.</h1>
+        <p id="micHint">Tap the microphone, say your message, then copy it into your Muse chat.</p>
+        <button class="mic-button" id="micButton" type="button" aria-label="Start listening" aria-pressed="false">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"></path></svg>
+          <span id="micStatus">Push to talk</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="workspace" aria-label="Voice controls">
+      <div class="work-grid">
+        <section class="panel message-panel" aria-labelledby="messageTitle">
+          <div class="section-heading"><h2 id="messageTitle">Your message to Kavi</h2><p>Speech appears here. Correct anything, copy it, then paste it into your Muse chat.</p></div>
+          <p class="fallback" id="fallbackHint">Voice recognition is unavailable here. Use your iPad keyboard’s dictation key in the box below.</p>
+          <label class="field-label" for="transcript">Transcript <span id="wordCount">0 words</span></label>
+          <textarea id="transcript" autocomplete="off" autocapitalize="sentences" spellcheck="true" placeholder="Your words will appear here…"></textarea>
+          <div class="actions"><button class="copy-button" id="copyButton" type="button">Copy message</button><button class="clear-button" id="clearButton" type="button">Clear</button></div>
+        </section>
+
+        <section class="panel reply-panel" aria-labelledby="replyTitle">
+          <div class="section-heading"><h2 id="replyTitle">Hear Kavi’s reply</h2><p>Paste Kavi’s text reply below. Your iPad reads it aloud while the dragon speaks.</p></div>
+          <label class="field-label" for="replyText">Kavi’s reply <span id="voiceLabel">Male voice when available</span></label>
+          <textarea id="replyText" autocomplete="off" spellcheck="true" placeholder="Paste Kavi’s reply here…"></textarea>
+          <button class="play-button" id="playButton" type="button">
+            <svg id="playIcon" aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg><span id="playLabel">Play reply</span>
+          </button>
+        </section>
+
+        <section class="panel home-panel" aria-labelledby="homeTitle">
+          <div class="home-heading"><img class="home-icon" src="assets/kavi-touch-icon.jpg" alt="Talk to Kavi Home Screen icon" /><div class="section-heading"><h2 id="homeTitle">Put Kavi on your Home Screen</h2><p>Launch this voice interface from one button.</p></div></div>
+          <ol class="steps">
+            <li><span>Open this page in <strong>Safari</strong> on your iPad.</span></li>
+            <li><span>Tap Safari’s <strong>Share</strong> button.</span></li>
+            <li><span>Choose <strong>Add to Home Screen</strong>, then tap Add.</span></li>
+            <li><span>Tap the new <strong>Talk to Kavi</strong> icon anytime.</span></li>
+          </ol>
+        </section>
+      </div>
+      <p class="privacy"><strong>Private by design.</strong> Nothing is stored here; text resets when the page reloads. Speech recognition and spoken voices use services provided by your browser and iPad.</p>
+    </section>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      'use strict';
+      var stage = document.getElementById('stage');
+      var avatarState = document.getElementById('avatarState');
+      var micButton = document.getElementById('micButton');
+      var micStatus = document.getElementById('micStatus');
+      var micHint = document.getElementById('micHint');
+      var fallbackHint = document.getElementById('fallbackHint');
+      var transcript = document.getElementById('transcript');
+      var wordCount = document.getElementById('wordCount');
+      var copyButton = document.getElementById('copyButton');
+      var clearButton = document.getElementById('clearButton');
+      var replyText = document.getElementById('replyText');
+      var playButton = document.getElementById('playButton');
+      var playLabel = document.getElementById('playLabel');
+      var playIcon = document.getElementById('playIcon');
+      var voiceLabel = document.getElementById('voiceLabel');
+      var toast = document.getElementById('toast');
+      var SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      var recognition = null;
+      var listening = false;
+      var baseText = '';
+      var finalText = '';
+      var speaking = false;
+      var voices = [];
+      var selectedVoice = null;
+      var toastTimer = null;
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 1900);
+      }
+      function countWords() {
+        var value = transcript.value.trim();
+        var count = value ? value.split(/\s+/).length : 0;
+        wordCount.textContent = count + (count === 1 ? ' word' : ' words');
+      }
+      function setSpeaking(active) {
+        speaking = active;
+        stage.classList.toggle('speaking', active);
+        avatarState.textContent = active ? 'speaking' : 'ready';
+        playLabel.textContent = active ? 'Stop speaking' : 'Play reply';
+        playIcon.innerHTML = active ? '<path d="M6 6h12v12H6z"></path>' : '<path d="M8 5v14l11-7z"></path>';
+        playButton.setAttribute('aria-label', active ? 'Stop Kavi speaking' : 'Play Kavi reply');
+      }
+      function setListening(active) {
+        listening = active;
+        micButton.classList.toggle('listening', active);
+        micButton.setAttribute('aria-pressed', String(active));
+        micButton.setAttribute('aria-label', active ? 'Stop listening' : 'Start listening');
+        micStatus.textContent = active ? 'Listening… tap to stop' : 'Push to talk';
+        micHint.textContent = active ? 'I’m listening. Tap again when you’re finished.' : 'Tap the microphone, say your message, then copy it into your Muse chat.';
+      }
+      function cleanJoin(first, second) {
+        first = (first || '').trim(); second = (second || '').trim();
+        if (!first) return second; if (!second) return first; return first + ' ' + second;
+      }
+      function stopRecognition() { if (recognition) { try { recognition.stop(); } catch (error) {} } }
+      function startRecognition() {
+        if (!SpeechRecognition) return;
+        if (speaking && window.speechSynthesis) { window.speechSynthesis.cancel(); setSpeaking(false); }
+        baseText = transcript.value; finalText = '';
+        recognition = new SpeechRecognition();
+        recognition.lang = navigator.language || 'en-US';
+        recognition.interimResults = true; recognition.continuous = false; recognition.maxAlternatives = 1;
+        recognition.onstart = function () { setListening(true); };
+        recognition.onresult = function (event) {
+          var interim = '';
+          for (var i = event.resultIndex; i < event.results.length; i += 1) {
+            var words = event.results[i][0].transcript;
+            if (event.results[i].isFinal) finalText = cleanJoin(finalText, words); else interim = cleanJoin(interim, words);
+          }
+          transcript.value = cleanJoin(baseText, cleanJoin(finalText, interim)); countWords();
+        };
+        recognition.onerror = function (event) {
+          var message = 'Couldn’t hear that. Try again.';
+          if (event.error === 'not-allowed' || event.error === 'service-not-allowed') message = 'Microphone access is off. Allow it in Safari settings.';
+          else if (event.error === 'no-speech') message = 'No speech heard. Tap the mic and try again.';
+          else if (event.error === 'network') message = 'Speech recognition is unavailable right now.';
+          showToast(message);
+        };
+        recognition.onend = function () {
+          recognition = null; setListening(false);
+          transcript.value = cleanJoin(baseText, finalText || transcript.value.slice(baseText.length)); countWords();
+        };
+        try { recognition.start(); } catch (error) { recognition = null; setListening(false); showToast('Couldn’t start the microphone. Try again.'); }
+      }
+      function chooseVoice() {
+        if (!window.speechSynthesis) return;
+        voices = window.speechSynthesis.getVoices() || [];
+        var maleNames = /\b(Aaron|Alex|Arthur|Daniel|Eddy|Fred|Gordon|James|Lee|Liam|Nathan|Oliver|Ralph|Reed|Rocko|Thomas)\b/i;
+        var english = voices.filter(function (voice) { return /^en[-_]/i.test(voice.lang); });
+        selectedVoice = english.find(function (voice) { return maleNames.test(voice.name); }) || english.find(function (voice) { return voice.default; }) || english[0] || voices[0] || null;
+        if (selectedVoice) voiceLabel.textContent = selectedVoice.name;
+      }
+      function speakReply() {
+        if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { showToast('Spoken replies aren’t supported in this browser.'); return; }
+        if (speaking) { window.speechSynthesis.cancel(); setSpeaking(false); return; }
+        var text = replyText.value.trim();
+        if (!text) { showToast('Paste Kavi’s reply first.'); replyText.focus(); return; }
+        if (listening) stopRecognition();
+        chooseVoice();
+        var utterance = new SpeechSynthesisUtterance(text);
+        if (selectedVoice) { utterance.voice = selectedVoice; utterance.lang = selectedVoice.lang; }
+        else utterance.lang = navigator.language || 'en-US';
+        utterance.rate = .96; utterance.pitch = .86;
+        utterance.onstart = function () { setSpeaking(true); };
+        utterance.onend = function () { setSpeaking(false); };
+        utterance.onerror = function () { setSpeaking(false); showToast('The voice stopped. Tap Play reply to try again.'); };
+        window.speechSynthesis.cancel(); window.speechSynthesis.speak(utterance);
+      }
+
+      if (!SpeechRecognition) {
+        micButton.disabled = true; micStatus.textContent = 'Use keyboard dictation'; micHint.textContent = 'Voice recognition is unavailable here. Dictate into the transcript box instead.'; fallbackHint.style.display = 'block';
+      } else {
+        micButton.addEventListener('click', function () { if (listening) stopRecognition(); else startRecognition(); });
+      }
+      if (!window.speechSynthesis) { playButton.disabled = true; playLabel.textContent = 'Voice unavailable'; }
+      else { chooseVoice(); window.speechSynthesis.onvoiceschanged = chooseVoice; }
+      transcript.addEventListener('input', countWords);
+      clearButton.addEventListener('click', function () { if (listening) stopRecognition(); transcript.value = ''; countWords(); transcript.focus(); });
+      copyButton.addEventListener('click', function () {
+        var text = transcript.value.trim();
+        if (!text) { showToast('Say or type a message first.'); transcript.focus(); return; }
+        function copied() {
+          copyButton.textContent = 'Copied'; copyButton.classList.add('copied'); showToast('Copied — paste it into your chat.');
+          setTimeout(function () { copyButton.textContent = 'Copy message'; copyButton.classList.remove('copied'); }, 1600);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(copied).catch(function () { transcript.focus(); transcript.select(); if (document.execCommand('copy')) copied(); else showToast('Select the text and choose Copy.'); });
+        } else { transcript.focus(); transcript.select(); if (document.execCommand('copy')) copied(); else showToast('Select the text and choose Copy.'); }
+      });
+      playButton.addEventListener('click', speakReply);
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) { if (listening) stopRecognition(); if (speaking && window.speechSynthesis) { window.speechSynthesis.cancel(); setSpeaking(false); } }
+      });
+      countWords();
+    }());
+  </script>
+</body>
+</html>
